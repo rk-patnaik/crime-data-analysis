@@ -1,0 +1,36 @@
+Total Crimes = COUNTROWS('fact_crime')
+
+Crimes Selected Period = 
+CALCULATE([Total Crimes], DATESBETWEEN('dim_calendar'[date_key], MIN('dim_calendar'[date_key]), MAX('dim_calendar'[date_key])))
+
+Daily Crime Trend =
+VAR MinDate = MIN('dim_calendar'[date_key])
+VAR MaxDate = MAX('dim_calendar'[date_key])
+RETURN
+CALCULATE([Total Crimes], DATESBETWEEN('dim_calendar'[date_key], MinDate, MaxDate))
+
+Offense Breakdown =
+SUMMARIZE(
+    'fact_crime',
+    'dim_offense'[offense_name],
+    "Crimes", COUNTROWS('fact_crime')
+)
+
+Hotspot Intensity =
+VAR Incidents =
+    CALCULATE(COUNTROWS('fact_crime'))
+VAR Area =
+    1
+RETURN DIVIDE(Incidents, Area)
+
+YoY % =
+VAR ThisPeriod = [Crimes Selected Period]
+VAR LastPeriod =
+    CALCULATE([Total Crimes], DATEADD('dim_calendar'[date_key], -1, YEAR))
+RETURN DIVIDE(ThisPeriod - LastPeriod, LastPeriod)
+
+Weekend Share % =
+DIVIDE(
+    CALCULATE([Total Crimes], 'dim_calendar'[is_weekend] = TRUE()),
+    [Total Crimes]
+)
